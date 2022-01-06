@@ -25,22 +25,23 @@ from tensorflow.keras import datasets, layers, models
 from scipy.io import arff
 
 
-# The dataset is about bankruptcy prediction of Polish companies. The data was collected from Emerging Markets
+# The dataset contains information on bankruptcy rates in Polish companies. The data was collected from Emerging Markets
 # Information Service (EMIS, [Web Link]), which is a database containing information on emerging markets around the
-# world. The bankrupt companies were analyzed in the period 2000-2012, while the still operating companies were
+# world. The bankrupt companies were analyzed through 2000-2012, while the still operating companies were
 # evaluated from 2007 to 2013.
 
 
-# Load the dataset from the 4th year of the data collection:
+# Load the dataset from the 5th year of the data collection:
 data = arff.loadarff('Credit_risk_modelling/Polish_Business_Bankruptcy/5year.arff')
 df = pd.DataFrame(data[0])  # Select all the data
 
 
-# The dataframe contains 64 different 'attributes', along with a categorcial value for either bankruptcy,
+# The dataframe contains 64 different 'attributes', along with a categorical values for either bankruptcy
 # or non-bankruptcy. Example of attributes include: net profit / total assets, total liabilities / total assets,
 # working capital / total assets etc etc....
 
-# For simplicities sake I will not rename the columns, but instead create a reference file for each attribute:
+# For simplicity sake I will not rename the columns. For reference, each financial attribute column can be easily
+# accessed using this link: http://archive.ics.uci.edu/ml/datasets/Polish+companies+bankruptcy+data#
 
 
 # Remove the bankruptcy data from the above dataframes and store it as a target variable:
@@ -59,6 +60,7 @@ df.isnull().sum()  # Several columns have lots of Nan values.
 lr = LinearRegression()
 imp = IterativeImputer(estimator=lr, missing_values=np.nan, max_iter=10, verbose=2,
                        imputation_order='roman', random_state=0)
+
 df_transform = imp.fit_transform(df)
 df_transform = pd.DataFrame(df_transform)  # Convert to a dataframe
 df_transform.isnull().sum()  # No longer any columns with Nans! They have all been replaced with predicted values.
@@ -85,10 +87,6 @@ X = df_scaled
 
 X_new = SelectKBest(k=48).fit_transform(df_scaled, y)  # Create the selection model based off the F statistic in ANOVA
 X_new = pd.DataFrame(X_new)  # Create new dataframe
-
-
-# Specify feature/predictor names:
-# feature_names = list(X.columns.values.tolist())
 
 
 # Split the data into training and testing sets:
@@ -151,7 +149,6 @@ print("Recall:", metrics.recall_score(y_test, predictions_binary))
 
 # Visualize the accuracy and loss function of the model over each epoch. This plots will also help to identify if the
 # model is over-fitting on the training data.
-
 
 # Summarize history for accuracy
 plt.plot(history.history['accuracy'])
