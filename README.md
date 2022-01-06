@@ -2,7 +2,7 @@
 
 A series of files and models relating to financial risk assesment. This repository aims to use machine learning techniques to optimize risk assesment on a variety of issues, including: 
 
-Individual credit risk assesment
-Probability of bankruptcy in companies
+_Individual credit risk assesment: Random forest, K-nearest neighbours and logistic regression algorithms._
 
-The modelling techniques used include algorithms in neural networks, random forest regression, and k-nearest neighbours.
+_Probability of bankruptcy in companies: Dense neural network, estimates bankruptcy with a 92% accuracy (35-40% on true positives, >97% on true negatives)._
+
