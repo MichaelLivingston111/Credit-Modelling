@@ -1,6 +1,6 @@
 # Financial-Risk-Modelling
 
-A series of files and models relating to financial risk assesment. This repository aims to use machine learning techniques to optimize risk assesment on a variety of issues, including: 
+A series of files and machine learning models relating to financial risk assesment. This repository aims to use machine learning techniques to optimize risk assesment on a variety of issues, including: 
 
 _Individual credit risk assesment: Random forest, K-nearest neighbours and logistic regression algorithms._
 
