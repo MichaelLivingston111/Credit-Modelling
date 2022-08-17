@@ -5,6 +5,9 @@
 # different types of machine learning techniques algorithms to predict risk of credit default, and identify the most
 # accurate technique.
 
+# What is required to use these algorithms: Number of days past due payment (30-59, 60-89, 90+ days), age,
+# number of dependants, number of open credit lines, monthly income and debt ratio.
+
 
 # IMPORTS:
 import seaborn as sns
@@ -48,7 +51,7 @@ def data_clean(input_csv):
     return feature_output, defaulted
 
 
-# Create a function to identify feature importance:
+# Create a function to identify and select feature based off order of importance:
 def feature_selection(features, target):
     # Feature extraction
     selector = SelectKBest(score_func=f_classif, k='all').fit(features, target)
@@ -60,10 +63,16 @@ def feature_selection(features, target):
     # Order the variables by feature importance:
     feature_imp = pd.Series(scores, index=feature_names).sort_values(ascending=False)
 
-    # Extract only the most important variables (n = 7):
+    # Extract only the most important variables (n = 7; top 7 most important features):
     selected_features = (feature_imp.nlargest(7))
 
-    return feature_imp
+    # Convert the index (parameters) to a list:
+    selected_features = selected_features.index.values.tolist()
+
+    # Use the selected feature list to extract the selected features from the original dataframe:
+    selected_features_df = features.filter(items=selected_features)
+
+    return selected_features_df
 
 
 # Apply the preprocessing function to the data file:
@@ -71,16 +80,8 @@ data_output = data_clean("Credit_risk_modelling/cs-training.csv")
 df_variables = data_output[0]  # Predictor variables
 default = data_output[1]  # Target variable: default risk
 
-# Visualize feature importance by applying the feature selection function:
+# Extract a dataframe with the selected feature variables using the feature_selection function::
 feature_vars = feature_selection(df_variables, default)
-
-# Create a new dataframe with only the most important features, as indicated by the feature selection function. This
-# part can be manipulated to include more or less features.
-
-df_var_selected = df_variables[["NumberOfTime30-59DaysPastDueNotWorse", "NumberOfTimes90DaysLate", "age",
-                                "NumberOfTime60-89DaysPastDueNotWorse", "NumberOfDependents",
-                                "NumberOfOpenCreditLinesAndLoans",
-                                "MonthlyIncome", "DebtRatio"]]
 
 
 # Now we have a workable dataframe to build machine learning models from!
