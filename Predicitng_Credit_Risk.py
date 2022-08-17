@@ -24,6 +24,11 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.feature_selection import f_classif
+from sklearn.ensemble import RandomForestRegressor
+
+import keras
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -88,3 +93,158 @@ feature_vars = feature_selection(df_variables, default)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
+# Need to split the data into training and testing sets to build and test the model:
+x_train1, x_test1, y_train1, y_test1 = train_test_split(feature_vars, default, test_size=0.2, random_state=0)
+print("Train data has {} data points, test data has {} data points".format(x_train1.shape[0], x_test1.shape[0]))
+
+
+# Build a function that creates a deep neural network, with the training sets as input:
+
+def neural_network(xtrain, ytrain, xtest, ytest, variables, activation_fn_hidden, activation_fn_output, learning_rate,
+                   loss_metric, num_epochs, batch_size):
+
+    # CREATE THE NEURAL NETWORK:
+    normalizer = tf.keras.layers.Normalization(axis=-1)
+    normalizer.adapt(np.array(variables))
+
+    # Model architecture:
+    model = keras.Sequential([
+        normalizer,
+        layers.Dense(8, input_dim=xtrain.shape[1], activation=activation_fn_hidden),
+        layers.Dropout(0.2),
+        layers.Dense(4, activation=activation_fn_hidden),
+        layers.Dense(1, activation=activation_fn_output),
+        layers.Dense(1)
+    ])
+
+    # Model compilation:
+    model.compile(
+        optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
+        loss=loss_metric,
+        metrics=['accuracy']
+    )
+
+    model.build()
+
+    # Train the DNN:
+    num_epochs = num_epochs
+    batch_size = batch_size
+    history_1 = model.fit(xtrain, ytrain, epochs=num_epochs, validation_split=0.2)  # Fitting
+
+    loss1, mae1 = model.evaluate(xtest, ytest, verbose=2)  # Calculate model mean absolute errors and loss rates
+
+    return model, history_1
+
+
+# Build a function that creates a deep Random Forest Algorithm, with the training sets as input:
+
+def random_forest(xtrain, ytrain, n_estimators, random_state):
+
+    # Instantiate model with x# of decision trees
+    rf = RandomForestClassifier(n_estimators=n_estimators, random_state=random_state)
+
+    rf.fit(xtrain, ytrain)  # Train the RF
+
+    return rf
+
+
+# FEATURE SCALING:
+sc = StandardScaler()
+x_train1 = sc.fit_transform(x_train1)
+x_test1 = sc.transform(x_test1)
+
+
+# Apply the DNN function:
+DNN_output = neural_network(x_train1, y_train1, x_test1, y_test1, feature_vars, 'relu', 'sigmoid', 0.001,
+                            'binary_crossentropy', 20, 50000)
+
+# ASSESS THE PERFORMANCE OF THE ALGORITHM: Visualizing its accuracy and loss rate over each epoch will give us
+# insight into whether or not the model is over/under fitting the data:
+DNN_model = DNN_output[0]  # Specify the DNN model
+hist = DNN_output[1]  # Specify the loss history
+
+# Summarize history for loss: (This is only applicable for the DNN)
+acc = hist.history['accuracy']
+val = hist.history['val_accuracy']
+epochs = range(1, len(acc) + 1)
+
+plt.plot(epochs, acc, '-', label='Training accuracy')
+plt.plot(epochs, val, ':', label='Validation accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend(loc='lower right')
+plt.plot()
+
+
+# Apply the RF function:
+RF_model = random_forest(x_train1, y_train1, 1000, 42)
+
+
+# PREDICTIONS:
+
+# Make predictions on the entire test data set:
+y_pred_DNN = DNN_model.predict(x_test1)
+y_pred_DNN_binary = np.where(y_pred_DNN > 0.3, 1, 0)  # Create binary predictions
+
+
+y_pred_RF = RF_model.predict(x_test1)
+
+# Create a confusion matrix to estimate the models accuracy:
+cnf_matrix_DNN = metrics.confusion_matrix(y_test1, y_pred_DNN_binary)
+cnf_matrix_RF = metrics.confusion_matrix(y_test1, y_pred_RF)
+
+
+
+
+
+#####
+
+# Random forest accuracy:
+acc_score = accuracy_score(y_test1, y_pred_RF)
+print(acc_score*100)
+
+# Create heatmap of the confusion matrix to quantify the prediction accuracy:
+class_names = [0, 1]
+fig, ax = plt.subplots()
+tick_marks = np.arange(len(class_names))
+plt.xticks(tick_marks, class_names)
+plt.yticks(tick_marks, class_names)
+
+sns.heatmap(pd.DataFrame(cnf_matrix_RF), annot=True, cmap="YlGnBu", fmt='g')
+ax.xaxis.set_label_position("top")
+plt.tight_layout()
+plt.title('Confusion matrix', y=1.1)
+plt.ylabel('True Default')
+plt.xlabel('Predicted Default')
+
+print("Accuracy:", metrics.accuracy_score(y_test1, y_pred_RF))
+print("Precision:", metrics.precision_score(y_test1, y_pred_RF))
+print("Recall:", metrics.recall_score(y_test1, y_pred_RF))
+
+
+
+#####
+
+# DNN accuracy:
+acc_score = accuracy_score(y_test1, y_pred_DNN_binary)
+print(acc_score*100)
+
+# Create heatmap of the confusion matrix to quantify the prediction accuracy:
+class_names = [0, 1]
+fig, ax = plt.subplots()
+tick_marks = np.arange(len(class_names))
+plt.xticks(tick_marks, class_names)
+plt.yticks(tick_marks, class_names)
+
+sns.heatmap(pd.DataFrame(cnf_matrix_DNN), annot=True, cmap="YlGnBu", fmt='g')
+ax.xaxis.set_label_position("top")
+plt.tight_layout()
+plt.title('Confusion matrix', y=1.1)
+plt.ylabel('True Default')
+plt.xlabel('Predicted Default')
+
+print("Accuracy:", metrics.accuracy_score(y_test1, y_pred_DNN_binary))
+print("Precision:", metrics.precision_score(y_test1, y_pred_DNN_binary))
+print("Recall:", metrics.recall_score(y_test1, y_pred_DNN_binary))
