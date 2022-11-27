@@ -34,9 +34,33 @@ from tensorflow.keras import datasets, layers, models
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-#  PART 1: DATA PREPROCESSING, INSPECTION, AND FEATURE SELECTION
-# Two sets of functions: 1) Data preprocessing 2) Feature selection and scoring
-# These functions will act to prepare all the data before application of machine learning models:
+# PART 1: DATA PREPROCESSING, INSPECTION, AND FEATURE SELECTION Two sets of functions: 1) Data preprocessing 2)
+# Feature selection and scoring These functions will act to prepare all the data before application of machine
+# learning models. Function (2) will be used in (1).
+
+
+# Create a function to identify and select feature based off order of importance:
+def feature_selection(features, target):
+    # Feature extraction
+    selector = SelectKBest(score_func=f_classif, k='all').fit(features, target)
+    scores = selector.scores_  # We now have a series of scores for each feature
+
+    # Feature names:
+    feature_names = list(features)
+
+    # Order the variables by feature importance:
+    feature_imp = pd.Series(scores, index=feature_names).sort_values(ascending=False)
+
+    # Extract only the most important variables (n = 7; top 7 most important features):
+    selected_features = (feature_imp.nlargest(7))  # Can be adjusted as necessary
+
+    # Convert the index (parameters) to a list:
+    selected_features = selected_features.index.values.tolist()
+
+    # Use the selected feature list to extract the selected features from the original dataframe:
+    selected_features_df = features.filter(items=selected_features)
+
+    return selected_features_df
 
 
 # Create a function to do all of the data cleaning, with the required data frame as input:
@@ -62,6 +86,9 @@ def data_clean(input_csv):
     # convert all categorical variables to numeric
     feature_output[cat_columns] = feature_output[cat_columns].apply(lambda x: pd.factorize(x)[0])
 
+    # Use the above feature selection function to extract only the most influential variables:
+    feature_output = feature_selection(feature_output, defaulted)
+
     # Now we need to split into training and testing sets:
     x_train, x_test, y_train, y_test = train_test_split(feature_output, defaulted, test_size=0.1, random_state=0)
 
@@ -70,33 +97,11 @@ def data_clean(input_csv):
 
 alldata = data_clean("credit_risk_dataset.csv")
 
+# Specify all training and testing sets:
 feature_train = alldata[0]
 feature_test = alldata[1]
 default_train = alldata[2]
 default_test = alldata[3]
 
-feature_train.max(axis='rows')
-feature_train.dtypes
-
-# Create a function to identify and select feature based off order of importance:
-def feature_selection(features, target):
-    # Feature extraction
-    selector = SelectKBest(score_func=f_classif, k='all').fit(features, target)
-    scores = selector.scores_  # We now have a series of scores for each feature
-
-    # Feature names:
-    feature_names = list(features)
-
-    # Order the variables by feature importance:
-    feature_imp = pd.Series(scores, index=feature_names).sort_values(ascending=False)
-
-    # Extract only the most important variables (n = 7; top 7 most important features):
-    selected_features = (feature_imp.nlargest(7))
-
-    # Convert the index (parameters) to a list:
-    selected_features = selected_features.index.values.tolist()
-
-    # Use the selected feature list to extract the selected features from the original dataframe:
-    selected_features_df = features.filter(items=selected_features)
-
-    return selected_features_df
+# Extract a dataframe with the selected feature variables using the feature_selection function::
+feature_vars = feature_selection(feature_train, default_train)
