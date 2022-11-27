@@ -30,7 +30,7 @@ import keras
 import tensorflow as tf
 from tensorflow.keras import datasets, layers, models
 
-# TESTING FOR GIT COMMIT!!!!!!!!
+# Test.
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ def feature_selection(features, target):
 
 
 # Apply the preprocessing function to the data file:
-data_output = data_clean("Credit_risk_modelling/cs-training.csv")
+data_output = data_clean("cs-training.csv")
 df_variables = data_output[0]  # Predictor variables
 default = data_output[1]  # Target variable: default risk
 
@@ -113,9 +113,17 @@ def neural_network(xtrain, ytrain, xtest, ytest, variables, activation_fn_hidden
     # Model architecture:
     model = keras.Sequential([
         normalizer,
-        layers.Dense(8, input_dim=xtrain.shape[1], activation=activation_fn_hidden),
+        layers.Dense(256, input_dim=xtrain.shape[1], activation=activation_fn_hidden),
         layers.Dropout(0.2),
-        layers.Dense(4, activation=activation_fn_hidden),
+        layers.Dense(64, activation=activation_fn_hidden),
+        layers.Dropout(0.2),
+        layers.Dense(32, activation=activation_fn_hidden),
+        layers.Dropout(0.2),
+        layers.Dense(16, activation=activation_fn_hidden),
+        layers.Dropout(0.2),
+        layers.Dense(8, activation=activation_fn_hidden),
+        layers.Dropout(0.2),
+        layers.Dense(2, activation=activation_fn_hidden),
         layers.Dense(1, activation=activation_fn_output),
         layers.Dense(1)
     ])
@@ -153,13 +161,13 @@ def random_forest(xtrain, ytrain, n_estimators, random_state):
 
 # FEATURE SCALING:
 sc = StandardScaler()
-x_train1 = sc.fit_transform(x_train1)
-x_test1 = sc.transform(x_test1)
+x_train2 = sc.fit_transform(x_train1)
+x_test2 = sc.transform(x_test1)
 
 
 # Apply the DNN function:
-DNN_output = neural_network(x_train1, y_train1, x_test1, y_test1, feature_vars, 'relu', 'sigmoid', 0.001,
-                            'binary_crossentropy', 20, 50000)
+DNN_output = neural_network(x_train2, y_train1, x_test2, y_test1, feature_vars, 'relu', 'sigmoid', 0.001,
+                            'binary_crossentropy', 10, 1000)
 
 # ASSESS THE PERFORMANCE OF THE ALGORITHM: Visualizing its accuracy and loss rate over each epoch will give us
 # insight into whether or not the model is over/under fitting the data:
@@ -187,18 +195,15 @@ RF_model = random_forest(x_train1, y_train1, 1000, 42)
 # PREDICTIONS:
 
 # Make predictions on the entire test data set:
-y_pred_DNN = DNN_model.predict(x_test1)
+y_pred_DNN = DNN_model.predict(x_test2)
 y_pred_DNN_binary = np.where(y_pred_DNN > 0.3, 1, 0)  # Create binary predictions
 
 
-y_pred_RF = RF_model.predict(x_test1)
+y_pred_RF = RF_model.predict(x_test2)
 
 # Create a confusion matrix to estimate the models accuracy:
 cnf_matrix_DNN = metrics.confusion_matrix(y_test1, y_pred_DNN_binary)
 cnf_matrix_RF = metrics.confusion_matrix(y_test1, y_pred_RF)
-
-
-
 
 
 #####
@@ -226,7 +231,6 @@ print("Precision:", metrics.precision_score(y_test1, y_pred_RF))
 print("Recall:", metrics.recall_score(y_test1, y_pred_RF))
 
 
-
 #####
 
 # DNN accuracy:
@@ -250,3 +254,4 @@ plt.xlabel('Predicted Default')
 print("Accuracy:", metrics.accuracy_score(y_test1, y_pred_DNN_binary))
 print("Precision:", metrics.precision_score(y_test1, y_pred_DNN_binary))
 print("Recall:", metrics.recall_score(y_test1, y_pred_DNN_binary))
+
