@@ -103,5 +103,43 @@ feature_test = alldata[1]
 default_train = alldata[2]
 default_test = alldata[3]
 
-# Extract a dataframe with the selected feature variables using the feature_selection function::
-feature_vars = feature_selection(feature_train, default_train)
+
+# Build a function that creates a deep Random Forest Algorithm, with the training sets as input:
+
+def random_forest(xtrain, ytrain, n_estimators, random_state):
+
+    # Instantiate model with x# of decision trees
+    rf = RandomForestClassifier(n_estimators=n_estimators, random_state=random_state)
+
+    rf.fit(xtrain, ytrain)  # Train the RF
+
+    return rf
+
+
+# Apply the RF function:
+RF_model = random_forest(feature_train, default_train, 1000, 42)
+y_pred_RF = RF_model.predict(feature_test)
+cnf_matrix_RF = metrics.confusion_matrix(default_test, y_pred_RF)
+
+
+# Random forest accuracy:
+acc_score = accuracy_score(default_test, y_pred_RF)
+print(acc_score*100)
+
+# Create heatmap of the confusion matrix to quantify the prediction accuracy:
+class_names = [0, 1]
+fig, ax = plt.subplots()
+tick_marks = np.arange(len(class_names))
+plt.xticks(tick_marks, class_names)
+plt.yticks(tick_marks, class_names)
+
+sns.heatmap(pd.DataFrame(cnf_matrix_RF), annot=True, cmap="YlGnBu", fmt='g')
+ax.xaxis.set_label_position("top")
+plt.tight_layout()
+plt.title('Confusion matrix', y=1.1)
+plt.ylabel('True Default')
+plt.xlabel('Predicted Default')
+
+print("Accuracy:", metrics.accuracy_score(default_test, y_pred_RF))
+print("Precision:", metrics.precision_score(default_test, y_pred_RF))
+print("Recall:", metrics.recall_score(default_test, y_pred_RF))
